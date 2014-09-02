@@ -13,11 +13,11 @@ module ExcelBook
 
       #
       # Excelのファイルを開く。ブロックが渡されていたら明示的にcloseしなくても良い。
-      # [filename]
+      # [filepath]
       #   オープンするファイルのパス
       #
-      def open(filename, options = {}, &block)
-        new(filename, options, &block)
+      def open(filepath, options = {mode: 'r'}, &block)
+        new(filepath, options, &block)
       end
 
       #
@@ -69,10 +69,36 @@ module ExcelBook
     #
     # 渡されたファイル名からbookインスタンスを生成。
     #
-    def initialize(filename, options = {}, &block)
+    def initialize(filepath, options = {}, &block)
       @@excel ||= WIN32OLE.new('Excel.Application')
       fso = WIN32OLE.new('Scripting.FileSystemObject')
-      @book = excel.Workbooks.Open(fso.GetAbsolutePathName(filename))
+
+      case options[:mode]
+      when 'r'
+        begin
+          raise Errno::ENOENT unless File.exist?(filepath)
+          @book = excel.Workbooks.Open(fso.GetAbsolutePathName(filepath))
+        rescue => ex
+          quit
+          puts "#{filepath} : #{ex.message}"
+        end
+      when 'w'
+        begin
+          if File.exist?(filepath)
+            @book = excel.Workbooks.Open(fso.GetAbsolutePathName(filepath))
+          else
+            filepath.gsub!('/', '\\')
+            excel.Workbooks.Add.saveAs(filepath)
+            @book = excel.Workbooks.Open(fso.GetAbsolutePathName(filepath))
+          end
+        rescue => ex
+          quit
+          puts ex.message
+        end
+      else
+        @book = excel.Workbooks.Open(fso.GetAbsolutePathName(filepath))
+      end
+
       @@open_books[@book.object_id] = @book
 
       if block
@@ -89,6 +115,15 @@ module ExcelBook
 
     def excel
       @@excel
+    end
+
+    #
+    # シートの追加を行う。
+    #
+    def add_sheet(name = nil)
+      sheet = book.Worksheets.Add({ after: last })
+      sheet.name = name if name
+      Sheet.new(sheet)
     end
 
     #
@@ -170,6 +205,7 @@ module ExcelBook
     def close
       @@open_books.delete(book.object_id)
       book.close
+      quit
     end
 
     #
