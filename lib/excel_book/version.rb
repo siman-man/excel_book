@@ -1,3 +1,3 @@
-class ExcelBook
+module ExcelBook
   VERSION = "0.0.1"
 end
