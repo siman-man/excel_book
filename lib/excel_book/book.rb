@@ -17,7 +17,7 @@ module ExcelBook
       #   オープンするファイルのパス
       #
       def open(filename, options = {}, &block)
-        new(file, options, &block)
+        new(filename, options, &block)
       end
 
       #
@@ -38,7 +38,7 @@ module ExcelBook
         if force && from.name == dest.name
           dest.name = 'randomStrign'
           from.copy(dest)
-          ExcelBook.delete(dest)
+          Book.delete(dest)
         else
           from.Copy(dest)
         end
