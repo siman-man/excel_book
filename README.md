@@ -2,6 +2,13 @@
 
 win32oleでエクセルを使うときに、自分が使いやすいようにラップしたもの。
 
+## 動作環境
+
+自分の環境でしか確認してません。
+
+Windows7(64bit)
+Excel2010
+
 ## Installation
 
 Add this line to your application's Gemfile:
