@@ -10,25 +10,20 @@ module ExcelBook
     attr_reader :book
 
     class << Book
-
-      #
       # Excelのファイルを開く。ブロックが渡されていたら明示的にcloseしなくても良い。
-      # [filepath]
-      #   オープンするファイルのパス
-      #
+      # @param filepath オープンするファイルのパス
       def open(filepath, options = {mode: 'r'}, &block)
+        if File.basename(filepath) == filepath
+          filepath = File.expand_path(filepath, Dir::pwd)
+        end
+
         new(filepath, options, &block)
       end
 
-      #
       # シートのコピーを行う
-      # [from]
-      #   コピー元シート
-      # [dest]
-      #   コピー先シート
-      # [force]
-      #   trueだと強制的に置き換える   
-      #
+      # @param from original sheet
+      # @param dest target sheet
+      # @param force force copy
       def copy(from, dest, force: false)
 
         display_alerts = @@excel.DisplayAlerts
@@ -36,25 +31,22 @@ module ExcelBook
       
         # 強制的に置き換える場合は、一度ファイル名を変えてからコピーし、その後削除を行う。
         if force && from.name == dest.name
-          dest.name = 'randomStrign'
-          from.copy(dest)
+          dest.name = 'ranDom@String'
+          from.sheet.copy(dest.sheet)
           Book.delete(dest)
         else
-          from.Copy(dest)
+          from.sheet.Copy(dest.sheet)
         end
 
         @@excel.DisplayAlerts = display_alerts
       end
 
-      #
       # シートの削除を行う
-      # [sheet]
-      #   削除対象のシート
-      #
+      # @param sheet delete target sheet.
       def delete(sheet)
         display_alerts = @@excel.DisplayAlerts
         @@excel.DisplayAlerts = false
-        sheet.Delete
+        sheet.delete
         @@excel.DisplayAlerts = display_alerts
       end
 
@@ -119,10 +111,24 @@ module ExcelBook
 
     #
     # シートの追加を行う。
+    # [param]
+    #   シートの名前
     #
-    def add_sheet(name = nil)
-      sheet = book.Worksheets.Add({ after: last })
-      sheet.name = name if name
+    def add_sheet(param = nil)
+      display_alerts = excel.DisplayAlerts
+      excel.DisplayAlerts = false
+
+      if param.instance_of?(String)
+        sheet = book.Worksheets.Add({ after: last.sheet })
+        sheet.name = param if param
+      elsif param.instance_of?(Sheet)
+        param.sheet.Copy({ after: last.sheet })
+        new_sheet  = last
+      else
+        raise "予期せぬパラメータです。"
+      end
+      excel.DisplayAlerts = display_alerts
+        
       Sheet.new(sheet)
     end
 
@@ -148,12 +154,12 @@ module ExcelBook
     # 返り値 : シートの配列
     #
     def sheets(param = nil)
-      return book.Worksheets(param) if param
+      return Sheet.new(book.Worksheets(param)) if param
 
       sheets = []
 
       book.Worksheets.each do |sheet|
-        sheets << sheet
+        sheets << Sheet.new(sheet)
       end
 
       sheets
@@ -163,21 +169,21 @@ module ExcelBook
     # シートの一番最初を取り出す
     #
     def first
-      book.Worksheets(1)
+      Sheet.new(book.Worksheets(1))
     end
 
     #
     # 二番目のシートを取り出す
     #
     def second
-      book.Worksheets(2)
+      Sheet.new(book.Worksheets(2))
     end
 
     #
     # 一番最後のシートを取り出す
     #
     def last
-      book.Worksheets(book.Worksheets.Count)
+      Sheet.new(book.Worksheets(book.Worksheets.Count))
     end
 
     #
@@ -196,7 +202,10 @@ module ExcelBook
     # 保存を行う
     #
     def save
+      display_alerts = excel.DisplayAlerts
+      excel.DisplayAlerts = false
       book.save
+      excel.DisplayAlerts = display_alerts
     end
 
     #

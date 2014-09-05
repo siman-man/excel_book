@@ -15,5 +15,13 @@ module ExcelBook
     def name
       sheet.name
     end
+
+    def index
+      sheet.index
+    end
+
+    def delete
+      sheet.Delete
+    end
   end
 end

@@ -9,7 +9,7 @@ Gem::Specification.new do |spec|
   spec.authors       = ["siman"]
   spec.email         = ["shuichi@occ.co.jp"]
   spec.summary       = %q{win32ole wrapper}
-  spec.description   = %q{win32ole wrapper for me.cls}
+  spec.description   = %q{win32ole wrapper for me}
   spec.homepage      = ""
   spec.license       = "MIT"
 
