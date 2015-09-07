@@ -60,10 +60,13 @@ module ExcelBook
 
     #
     # 渡されたファイル名からbookインスタンスを生成。
+    #   mode r : 読み取りモード
+    #   mode w : 書き込みモード
     #
     def initialize(filepath, options = {}, &block)
       @@excel ||= WIN32OLE.new('Excel.Application')
       fso = WIN32OLE.new('Scripting.FileSystemObject')
+      filepath.encode!('UTF-8')
 
       case options[:mode]
       when 'r'
@@ -72,7 +75,7 @@ module ExcelBook
           @book = excel.Workbooks.Open(fso.GetAbsolutePathName(filepath))
         rescue => ex
           quit
-          puts "#{filepath} : #{ex.message}"
+          puts "#{ex.message}"
         end
       when 'w'
         begin
@@ -125,7 +128,7 @@ module ExcelBook
         param.sheet.Copy({ after: last.sheet })
         new_sheet  = last
       else
-        raise "予期せぬパラメータです。"
+        raise '予期せぬパラメータです。'
       end
       excel.DisplayAlerts = display_alerts
         
